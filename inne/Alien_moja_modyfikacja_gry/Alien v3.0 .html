@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Alien Invasion v.3.0</title>
+    <!--
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    -->
+    <style type="text/css">
+        body, html { margin: 0; padding: 0; background-color: #222; }
+
+        .text-center {    
+            margin: auto;    
+            text-align: center;    
+        }
+
+        .valign {
+            position: relative;
+            top: 50%;
+            -webkit-transform: translateY(-50%);
+            -ms-transform: translateY(-50%);
+            transform: translateY(-50%);
+        }
+
+        #content {
+            margin-top: 20px;
+
+            padding: 0;
+        }
+
+        #canvas {
+            border: 2px solid #555;    
+            background-color: #000;
+        }
+
+
+
+    </style>
+</head>
+<body>    
+    <div id="content" class="text-center">
+        <canvas id="canvas" class="valing" width="1200" height="600"></canvas>
+    </div>
+    
+    <!--
+    <script type="text/javascript" src="js/script.js"></script>
+-->
+
+<script type="text/javascript">
+    var canvas = document.getElementById("canvas");
+    var surface = canvas.getContext("2d");
+    
+//fonts
+surface.font = "normal bold 20px Helvetica";
+surface.textBaseline = "top";
+
+var rockets = [];
+var aliens = [];
+var blasts = [];
+							
+var player_position_x = Math.round(canvas.width/2)-2;
+var player_position_y = Math.round(canvas.height/2)-5;
+var przysp_x= 0;
+var przysp_y= -0.1;
+
+var BLAST_RANGE = 20;    //default rocket blast range	
+var PLAYER_COLOR= "#FFF";
+var PLAYER_SIZE= 4;
+var BLAST_COLOR= "#5FF";
+var ROCKET_COLOR= "#00F";
+var ALIEN_BLAST_COLOR= "#F00";
+var ALIEN_BLAST_SIZE= 100;
+var ROCKET_VELOCITY= 2;							// mod. 2             		 
+var ALIEN_VELOCITY= 0.3;
+var ALIEN_COLOR= "#0F0";
+var BLAST_TIMEOUT= 100;
+var TEXT_COLOR= "#00F";
+var SPAWN_VELOCITY= 1000;
+
+//stats
+var missilesFired = 0;
+var aliensKilled = 0;
+var alienKilledRatio = 0;
+var humansKilled = 0;
+var humansKilledAtBlast = Math.round(Math.random()*400 + 100);
+
+var globalID;
+var mousePos;
+
+var MovableObjectClass = {
+    x:0,
+    y:0,
+    velocity: 0,
+    xTarget:0,
+    yTarget:0,
+    xVect:0,
+    yVect:0,
+    dVect:0,			//dlugosc wektora
+    vxSpeed:0,
+    vySpeed:0,
+    blastRadius: BLAST_RANGE,			// jedyna wartość domyślna która coś zmienia
+
+    speedVectorCount: function(targetX, targetY) {
+        this.xTarget = targetX;
+        this.yTarget = targetY;
+        this.countActualPosition();
+        this.countDistanceToTarget();
+        this.vxSpeed = ((this.xVect*this.velocity)/this.dVect);	
+        this.vySpeed = ((this.yVect*this.velocity)/this.dVect);
+    },																							
+    
+    countActualPosition: function() {
+        this.xVect = this.xTarget - this.x;
+        this.yVect = this.yTarget - this.y;
+    },
+
+    countDistanceToTarget: function() {
+        this.dVect = Math.sqrt(this.xVect*this.xVect+this.yVect*this.yVect); 
+    },
+	
+
+    explosionRangeCheck: function (targetX, targetY) {
+        var distX = targetX-this.x;
+        var distY = targetY-this.y;
+        return Math.sqrt(distX*distX+distY*distY); //dlugosc wektora wybuchu
+    },
+
+    draw: function (w,h, drawColor) {
+        this.x+=this.vxSpeed;
+        this.y+=this.vySpeed;
+        surface.fillStyle = drawColor; 
+        surface.fillRect(this.x-w, this.y-h, 2*w,2*h);
+		
+    },
+	
+	drawPointer: function () {
+		var sx = this.x - player_position_x;
+		var sy = this.y - player_position_y;
+		var cosB= this.xVect/ this.dVect;
+		var sinB= this.yVect/ this.dVect;
+		var b= ALIEN_VELOCITY * ( sx*cosB + sy*sinB);
+		var a= ROCKET_VELOCITY*ROCKET_VELOCITY - ALIEN_VELOCITY*ALIEN_VELOCITY; 
+		var time= (b + Math.sqrt( b*b + a*(sx*sx + sy*sy))  )/a;
+		
+		var targetX = sx + ALIEN_VELOCITY*cosB*time + player_position_x;
+		var targetY = sy + ALIEN_VELOCITY*sinB*time + player_position_y;
+		
+        surface.fillStyle = ROCKET_COLOR; 
+        surface.fillRect(targetX, targetY, 2,2);
+		
+    }
+}
+
+var BlastObjectClass = {			// wartości domyślne ignorowane
+    x:0,
+    y:0,
+    blastRadius: BLAST_RANGE,
+    blastColor: "#FF0"					
+}
+
+function controlPlayer( event) {
+    var key= event.keyCode;
+	var ACCELERATION_VALUE_X= 0.1;
+	var ACCELERATION_VALUE_Y= 0.1;
+	
+	if (key==65)		// 'a'
+		przysp_x-= ACCELERATION_VALUE_X;
+	if (key==68)		// 'd'
+		przysp_x+= ACCELERATION_VALUE_X;
+	if (key==83)		// 's'
+		przysp_y+= ACCELERATION_VALUE_Y;
+	if (key==87)		// 'w'
+		przysp_y-= ACCELERATION_VALUE_Y;
+	if(key == 32)	// Space
+	{	
+			if( przysp_x> ACCELERATION_VALUE_X / 2)
+				przysp_x-= ACCELERATION_VALUE_X;
+			if( przysp_x< -ACCELERATION_VALUE_X / 2 )
+				przysp_x+=ACCELERATION_VALUE_X;
+				
+			if( przysp_y> ACCELERATION_VALUE_Y / 2)
+				przysp_y-= ACCELERATION_VALUE_Y;
+			if( przysp_y< -ACCELERATION_VALUE_Y / 2 )
+				przysp_y+= ACCELERATION_VALUE_Y;		
+	}
+	
+}
+
+document.addEventListener("keydown", controlPlayer);
+window.addEventListener("load", gameStart);
+canvas.addEventListener("mousedown", mouseDownHandler);
+canvas.addEventListener("mousemove", function(evt) 
+    {
+        mousePos = getMousePos(canvas, evt);
+    }  );
+
+function getMousePos(canvas, evt) {
+   
+    return {
+            x: evt.clientX - (canvas.offsetLeft - window.pageXOffset),
+            y: evt.clientY - (canvas.offsetTop - window.pageYOffset)
+        };
+}
+
+
+function mouseDownHandler() {
+        rocketFire();
+}
+
+function gameStart() {
+    //function starts aliens cycle & game render cycle
+    aliensFire();
+    update();
+}
+
+function update(){
+    globalID = window.requestAnimationFrame(update, canvas);    
+    render();
+	
+	if( isFailure() ){
+			blastFire( player_position_x, player_position_y, "#F00", 60);
+			blastDraw();
+			window.cancelAnimationFrame( globalID);
+	}
+		
+}
+
+function isFailure(){
+	if( player_position_y+ PLAYER_SIZE > canvas.height)
+		return true;
+		
+	for (var i=0; i<aliens.length; i++) 
+                if(  distFromAlien(i) <= PLAYER_SIZE)
+						return true;
+	
+	for (var i=0; i<blasts.length; i++) 
+                if(  distFromBlast(i) <= PLAYER_SIZE + blasts[i].blastRadius )
+						return true;
+	
+	return false;
+}
+
+function distFromAlien(i) {
+	var x= player_position_x - aliens[i].x;
+	var y= player_position_y - aliens[i].y;
+	return Math.sqrt( x*x + y*y );
+}
+
+function distFromBlast(i) {
+	var x= player_position_x - blasts[i].x;
+	var y= player_position_y - blasts[i].y;
+	return Math.sqrt( x*x + y*y );
+}
+
+function render() {
+
+	// Zamaluj wszystko na czarno
+    surface.fillStyle = "rgba(0,0,0,1)";
+    surface.clearRect(0, 0, canvas.width, canvas.height);
+	
+	playerDraw();
+    aliensDraw();
+    rocketsDraw();
+    blastDraw();
+    statsDraw();
+	
+}
+
+function playerDraw(){
+	player_position_x += przysp_x;
+	player_position_y += przysp_y;
+	 
+    surface.fillStyle = PLAYER_COLOR;
+    drawPlayer();
+}
+
+function drawPlayer(){
+	var x = player_position_x - PLAYER_SIZE/2;
+	var y = player_position_y - PLAYER_SIZE/2;
+	
+	if( player_position_x >= canvas.width + PLAYER_SIZE)
+		x = canvas.width - PLAYER_SIZE;
+	if( player_position_x <= - PLAYER_SIZE)
+		x = 0;
+	if( player_position_y <= - PLAYER_SIZE)
+		y = 0;
+
+	surface.fillRect( x, y, PLAYER_SIZE, PLAYER_SIZE);		
+}
+
+function statsDraw() {
+    //Display the message text above the square
+    if (missilesFired!=0) {
+        alienKilledRatio = (( (aliensKilled*100) / missilesFired)).toFixed(2); 
+    }
+    
+    surface.fillStyle = TEXT_COLOR;			// kolor tekstu
+    surface.fillText("Humans lost: "+humansKilled, 10, 10);
+    surface.fillText("Shots: "+missilesFired, 10, 30);
+    surface.fillText("Ratio: "+ alienKilledRatio + "%", 10, 50);
+    surface.fillText("Kills: "+aliensKilled, 10, 70);
+	surface.fillText("Controls: Space,W,A,S,D,", 10, 100);
+}
+
+function rocketFire(){
+    var rocket = Object.create(MovableObjectClass);
+    missilesFired++;
+    rocket.x = player_position_x;
+    rocket.y = player_position_y;										// wysokosc strzału z działka
+    rocket.velocity = ROCKET_VELOCITY;	
+    rocket.speedVectorCount(mousePos.x, mousePos.y);
+    rockets.push(rocket);    
+}
+
+function rocketsDraw() {
+    for (var x=0; x<rockets.length; x++) {
+        rockets[x].draw(1,1, ROCKET_COLOR);
+        rockets[x].countActualPosition();
+        rockets[x].countDistanceToTarget();                
+        if (rockets[x].dVect<= ROCKET_VELOCITY/2) {	
+            blastFire(rockets[x].x, rockets[x].y, BLAST_COLOR, BLAST_RANGE); 					 // dodaj nowy wybuch
+            //sprawdz miejsce wybuchu na obcych
+            for (var i=0; i<aliens.length; i++) {
+                //sprawdz odleglosc obiektow
+                var blast = rockets[x].explosionRangeCheck(aliens[i].x, aliens[i].y);
+                //jesli w zasiegu, wytnij aliena z tablicy
+                if (blast<rockets[x].blastRadius) {
+                    aliens.splice(i,1);
+                    aliensKilled++;
+					i--;
+                }
+            }
+            rockets.splice(x,1); //wytnij rakiete po wybuchu
+			x--;			// ta linijka zapobiega krótkiemu zatrzymaniu się kolejno wystrzelonej rakiety po wybuchu
+        }
+    }   
+}
+
+function blastFire(xBlast,yBlast,blCol,blRad) {
+    if (blRad === undefined) blRad = BLAST_RANGE;
+    var blast = Object.create(BlastObjectClass);
+    blast.x = xBlast;
+    blast.y = yBlast;
+    blast.blastColor = blCol;
+    blast.blastRadius = blRad;
+    blasts.push(blast);
+    
+    window.setTimeout(blastRemove, BLAST_TIMEOUT);
+}
+
+function blastRemove() {    
+    blasts.splice(0,1);
+}
+
+function blastDraw() {    
+    for (var j=0; j<blasts.length; j++) {        
+        surface.beginPath();
+        surface.arc(blasts[j].x,blasts[j].y,blasts[j].blastRadius,0,2*Math.PI, false);   
+        surface.lineWidth = 1;
+        surface.strokeStyle = blasts[j].blastColor;
+        surface.stroke();
+    }    
+}
+
+
+
+function aliensFire() {
+    window.setTimeout(aliensFire, (Math.random() * SPAWN_VELOCITY + 100));
+    var alien = Object.create(MovableObjectClass);
+    alien.x = Math.round(Math.random() * canvas.width);
+
+    alien.velocity = ALIEN_VELOCITY;
+    alien.xTarget = Math.round(Math.random() * (canvas.width-100)+100);
+    alien.yTarget = canvas.height;
+    alien.speedVectorCount(alien.xTarget, alien.yTarget);
+    aliens.push(alien);
+}
+
+function aliensDraw() {
+    for (var x=0; x<aliens.length; x++) {
+        aliens[x].draw(2,2, ALIEN_COLOR);
+        aliens[x].countActualPosition();
+        aliens[x].countDistanceToTarget(); 
+		aliens[x].drawPointer(); 				// AutoNamierzanie
+        if (aliens[x].dVect< ALIEN_VELOCITY/2) {            
+            blastFire(aliens[x].x, aliens[x].y, ALIEN_BLAST_COLOR, ALIEN_BLAST_SIZE);  //rysuj wybuch na pozycji
+            //humans killed
+            humansKilled+=humansKilledAtBlast;
+
+            aliens.splice(x,1); 
+			x--;	
+        }
+    }      
+}
+</script>    
+</body>
+</html>

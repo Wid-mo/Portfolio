@@ -1,0 +1,6 @@
+c:\users\bartek\documents\visual studio 2015\Projects\Wylacz_Lampki\Wylacz_Lampki\bin\Debug\Wylacz_Lampki.exe.config
+c:\users\bartek\documents\visual studio 2015\Projects\Wylacz_Lampki\Wylacz_Lampki\bin\Debug\Wylacz_Lampki.exe
+c:\users\bartek\documents\visual studio 2015\Projects\Wylacz_Lampki\Wylacz_Lampki\bin\Debug\Wylacz_Lampki.pdb
+c:\users\bartek\documents\visual studio 2015\Projects\Wylacz_Lampki\Wylacz_Lampki\obj\Debug\Wylacz_Lampki.csprojResolveAssemblyReference.cache
+c:\users\bartek\documents\visual studio 2015\Projects\Wylacz_Lampki\Wylacz_Lampki\obj\Debug\Wylacz_Lampki.exe
+c:\users\bartek\documents\visual studio 2015\Projects\Wylacz_Lampki\Wylacz_Lampki\obj\Debug\Wylacz_Lampki.pdb
