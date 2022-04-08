@@ -10,8 +10,8 @@ This game was made in C# on console.
 You can set dimension of the board. 
 
 ## Cheat Code
-If you write: "ratuj" then You can see solution.
+If you write: "ratuj" then you can see solution.
 
 ## Source code
-All source code is in: Wylacz_Lampki/Wylacz_Lampki/Program.cs
+The most important file is [here](https://github.com/Wid-mo/Portfolio/blob/master/Wylacz_Lampki/Wylacz_Lampki/Program.cs)
 
