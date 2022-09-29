@@ -9,9 +9,15 @@ In this game you must turn off all lights. More info about this game is there [L
 This game was made in C# on console. 
 You can set dimension of the board. 
 
-## Cheat Code
-If you write: "ratuj" then you can see solution.
+## How to use
+1) Download .zip file from [here](https://github.com/Wid-mo/Portfolio/archive/refs/heads/master.zip)
+2) Inside folder go to: Portfolio-master/Wylacz_Lampki/Wylacz_Lampki/bin/Debug/Wylacz_Lampki.exe
 
-## Source code
-The most important file is [here](https://github.com/Wid-mo/Portfolio/blob/master/Wylacz_Lampki/Wylacz_Lampki/Program.cs)
+## Cheat code
+If you write: "ratuj" then you can see solution. 
+
+------------------------
+
+## Script file with game code
+[here](https://github.com/Wid-mo/Portfolio/blob/master/Wylacz_Lampki/Wylacz_Lampki/Program.cs)
 
