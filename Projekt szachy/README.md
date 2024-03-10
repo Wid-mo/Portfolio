@@ -1,4 +1,4 @@
-# Blind Chess
+# Chess + blind chess
 
 ![szachy](https://user-images.githubusercontent.com/22799520/162438665-c2ac7ed5-e0bf-41ba-a1b4-df8a8f783158.png)
 ![szachy2](https://user-images.githubusercontent.com/22799520/162438700-0a331ccf-c5dc-4d01-b16b-a1ab4d45017c.png)
